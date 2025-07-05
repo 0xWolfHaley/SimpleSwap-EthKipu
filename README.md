@@ -24,7 +24,7 @@ SimpleSwap is a decentralized exchange (DEX) protocol implementing an automated 
 
 | Feature     | Description                                |
 |-------------|--------------------------------------------|
-| AMM Model   | Constant product formula (x × y = k)       |
+| AMM Model   | Constant product formula (x . y = k)       |
 | LP Tokens   | ERC20 "SSLP" tokens track liquidity shares |
 | Swap Fees   | 0.3% fee on trades                         |
 | Protections | Slippage controls and deadline enforcement |
@@ -51,6 +51,7 @@ npm install
 ## 💡 Usage Examples
 
 ### Adding Liquidity
+
 ```
 await simpleSwap.addLiquidity(
     TOKEN_A, 
@@ -65,7 +66,32 @@ await simpleSwap.addLiquidity(
 ```
 
 ---
+
+## 🔧 API Reference
+
+### Core Functions
+
+| `Function`	               | `Parameters`	                                                                          | `Returns`                       |
+|------------------------------|------------------------------------------------------------------------------------------|---------------------------------|
+| `addLiquidity`	           | `(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, to, deadline)` | `(amountA, amountB, liquidity)` |
+| `swapExactTokensForTokens`   | `(amountIn, amountOutMin, path, to, deadline)`                                           | `amounts[]`                     |
+
+---
+
+## 🧪 Testing
+
+```
+# Run tests
+npx hardhat test
+
+# Generate coverage report
+npx hardhat coverage
+```
+
+---
+
 ## 📊 Contract Structure
+
 ```
 // Core Storage
 mapping(address => mapping(address => Pool)) public pools;
@@ -80,6 +106,12 @@ struct Pool {
 ## 🔒 Security
 ### Audit Status
 ⚠️ Warning: This code is unaudited. Use at your own risk.
+
+### Critical Checks
+```
+require(deadline >= block.timestamp, "EXPIRED");
+require(amountOut >= amountOutMin, "INSUFFICIENT_OUTPUT");
+```
 
 ---
 
