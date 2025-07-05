@@ -30,6 +30,20 @@ SimpleSwap is a decentralized exchange (DEX) protocol implementing an automated 
 | Protections | Slippage controls and deadline enforcement |
 
 ---
+## 📊 Contract Structure
+
+```
+// Core Storage
+mapping(address => mapping(address => Pool)) public pools;
+
+struct Pool {
+    uint256 reserveA;
+    uint256 reserveB;
+}
+```
+
+---
+
 ## 🚀 Deployment
 
 ### Requirements
@@ -56,12 +70,12 @@ npm install
 await simpleSwap.addLiquidity(
     TOKEN_A, 
     TOKEN_B,
-    1e18, // 1.0 Token A
-    2000e18, // 2000 Token B
-    0.9e18, // Min 0.9 Token A
-    1800e18, // Min 1800 Token B
+    1e18,                // 1.0 Token A
+    2000e18,            // 2000 Token B
+    0.9e18,             // Min 0.9 Token A
+    1800e18,            // Min 1800 Token B
     recipientAddress,
-    Date.now() + 300 // 5 min deadline
+    Date.now() + 300    // 5 min deadline
 );
 ```
 
@@ -90,21 +104,10 @@ npx hardhat coverage
 
 ---
 
-## 📊 Contract Structure
-
-```
-// Core Storage
-mapping(address => mapping(address => Pool)) public pools;
-
-struct Pool {
-    uint256 reserveA;
-    uint256 reserveB;
-}
-```
----
-
 ## 🔒 Security
+
 ### Audit Status
+
 ⚠️ Warning: This code is unaudited. Use at your own risk.
 
 ### Critical Checks
@@ -116,4 +119,8 @@ require(amountOut >= amountOutMin, "INSUFFICIENT_OUTPUT");
 ---
 
 ## 📜 License
-MIT License - See LICENSE for full details.
+
+This project is licensed under the MIT License - See LICENSE for full details.
+
+
+
