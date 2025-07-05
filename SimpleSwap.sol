@@ -7,8 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 /**
  * @title SimpleSwap
  * @author Juan Cruz Gonzalez
- * @notice This contract allows users to add liquidity to a token pair and receive LP tokens,
- *         remove liquidity to get back their tokens, and swap between tokens in the pool.
+ * @notice This contract allows users to add liquidity to a token pair and receive LP tokens, remove liquidity to get back their tokens, and swap between tokens in the pool.
  * @dev Implements a basic constant product automated market maker (AMM) similar to Uniswap V2.
  */
 contract SimpleSwap is ERC20 {
