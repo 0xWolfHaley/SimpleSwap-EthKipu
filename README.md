@@ -7,13 +7,25 @@ SimpleSwap is a decentralized exchange (DEX) protocol implementing an automated 
 
 ---
 
+## 📄 Overview
+
+**Contract Name:** `SimpleSwap`  
+**Author:** Juan Cruz Gonzalez  
+**License:** MIT  
+**Language:** Solidity ^0.8.0  
+**Base Token:** OpenZeppelin ERC20
+
+This contract manages token swaps and liquidity pools for any two ERC20 tokens. Liquidity providers earn LP tokens proportional to their share in the pool.
+
+---
+
 ## 📋 Table of Contents
 
 - [✨ Features](#-features)
 - [📊 Contract Structure](#-contract-structure)
+- [🔧 API Reference](#-api-reference)
 - [🚀 Deployment](#-deployment)
 - [💡 Usage Examples](#-usage-examples)
-- [🔧 API Reference](#-api-reference)
 - [🧪 Testing](#-testing)
 - [🔒 Security](#-security)
 - [📜 License](#-license)
@@ -22,25 +34,100 @@ SimpleSwap is a decentralized exchange (DEX) protocol implementing an automated 
 
 ## ✨ Features
 
-| Feature     | Description                                |
-|-------------|--------------------------------------------|
-| AMM Model   | Constant product formula (x . y = k)       |
-| LP Tokens   | ERC20 "SSLP" tokens track liquidity shares |
-| Swap Fees   | 0.3% fee on trades                         |
-| Protections | Slippage controls and deadline enforcement |
+- **Liquidity Provision**: Add or remove token pairs from the pool.
+- **Token Swapping**: Swap tokens based on constant product formula.
+- **LP Token Minting**: Issues LP tokens to liquidity providers.
+- **Reserve Management**: Tracks and updates token reserves.
+- **Price and Output Estimation**: Utility functions for price and swap output estimation.
 
 ---
 ## 📊 Contract Structure
 
 ```
-// Core Storage
-mapping(address => mapping(address => Pool)) public pools;
+//Deploys the contract and initializes the LP token with name LPToken and symbol LPT.
+constructor(address initialOwner)
 
-struct Pool {
-    uint256 reserveA;
-    uint256 reserveB;
+//Stores the reserves of token pairs in sorted order.
+struct Reserve {
+    uint reserve0;
+    uint reserve1;
 }
 ```
+
+---
+
+## 🔧 API Reference
+
+### Core Functions
+
+### ```addLiquidity(...)```
+##### Adds liquidity to the token pair pool.
+
+- Mints LP tokens to the to address.
+
+- Updates internal reserves.
+
+- Emits LiquidityAdded.
+
+### ```removeLiquidity(...)```
+
+##### Removes liquidity and burns LP tokens.
+
+- Transfers proportional amounts of tokens back to the user.
+
+- Emits LiquidityRemoved.
+
+### ```swapExactTokensForTokens(...)```
+
+##### Swaps an exact amount of input tokens for as many output tokens as possible.
+
+- Uses constant product formula.
+
+- Updates reserves.
+
+- Emits TokensSwapped.
+
+### ```getReserves(tokenA, tokenB)```
+
+- Returns the current reserves for the token pair.
+
+### ```getPrice(tokenA, tokenB)```
+
+- Returns the price of tokenA in terms of tokenB.
+
+### ```getAmountOut(tokenIn, tokenOut, amountIn)```
+
+- Estimates the amount of tokenOut returned for a given input amount.
+
+### 📦 Internal Utilities
+
+```_computeLiquidityAmounts(...)```
+Calculates optimal token amounts based on existing reserves and user-provided min/desired values.
+
+```calculateLiquidity(...)```
+Computes how many LP tokens to mint based on input amounts and current reserves.
+
+```updateReserves(...)```
+Updates stored reserves after liquidity changes or swaps.
+
+```_sqrt(...)```
+Efficient square root implementation using the Babylonian method.
+
+### 📝 Events
+
+```LiquidityAdded```: Emitted when liquidity is added.
+
+```LiquidityRemoved```: Emitted when liquidity is removed.
+
+```TokensSwapped```: Emitted when tokens are swapped.
+
+## 📎 Requirements & Assumptions
+
+- Only works with ERC-20 tokens.
+
+- Pairs are sorted internally for consistent tracking.
+
+- Assumes non-zero token addresses and distinct token pairs.
 
 ---
 
@@ -67,28 +154,26 @@ npm install
 ### Adding Liquidity
 
 ```
-await simpleSwap.addLiquidity(
-    TOKEN_A, 
-    TOKEN_B,
-    1e18,                // 1.0 Token A
-    2000e18,            // 2000 Token B
-    0.9e18,             // Min 0.9 Token A
-    1800e18,            // Min 1800 Token B
-    recipientAddress,
-    Date.now() + 300    // 5 min deadline
+simpleSwap.addLiquidity(
+    tokenA, tokenB,
+    amountADesired, amountBDesired,
+    amountAMin, amountBMin,
+    msg.sender,
+    block.timestamp + 300
 );
 ```
 
----
+### Swapping Tokens
 
-## 🔧 API Reference
-
-### Core Functions
-
-| `Function`	               | `Parameters`	                                                                          | `Returns`                       |
-|------------------------------|------------------------------------------------------------------------------------------|---------------------------------|
-| `addLiquidity`	           | `(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, to, deadline)` | `(amountA, amountB, liquidity)` |
-| `swapExactTokensForTokens`   | `(amountIn, amountOutMin, path, to, deadline)`                                           | `amounts[]`                     |
+```
+simpleSwap.swapExactTokensForTokens(
+    amountIn,
+    amountOutMin,
+    [tokenIn, tokenOut],
+    msg.sender,
+    block.timestamp + 300
+);
+```
 
 ---
 
@@ -106,15 +191,17 @@ npx hardhat coverage
 
 ## 🔒 Security
 
+### Security Considerations
+
+- No reentrancy guard is implemented — should be added in production.
+
+- No slippage protection outside of amountMin checks.
+
+- Use proper allowance and token approval for swaps and liquidity actions.
+
 ### Audit Status
 
 ⚠️ Warning: This code is unaudited. Use at your own risk.
-
-### Critical Checks
-```
-require(deadline >= block.timestamp, "EXPIRED");
-require(amountOut >= amountOutMin, "INSUFFICIENT_OUTPUT");
-```
 
 ---
 
