@@ -2,16 +2,19 @@
 pragma solidity ^0.8.0;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title SimpleSwap
 /// @author Juan Cruz Gonzalez
 /// @notice A simple automated market maker (AMM) supporting basic token swaps and liquidity management
-contract SimpleSwap is ERC20 {
-    struct Reserve {
+
+contract SimpleSwap is ERC20, Ownable {
+    
+   struct Reserve {
         uint reserve0;
         uint reserve1;
     }
-
+    
     mapping(address => mapping(address => Reserve)) private reserves;
 
     /// @notice Emitted when liquidity is added to the pool
@@ -45,6 +48,7 @@ contract SimpleSwap is ERC20 {
     /// @param initialOwner The address that will own the initial LP tokens
     constructor(address initialOwner)
         ERC20("LPToken", "LPT")
+        Ownable(initialOwner)
     {}
 
     /// @dev Sorts token addresses to ensure consistency in storage
@@ -203,17 +207,15 @@ contract SimpleSwap is ERC20 {
     }
 
     /// @notice Estimates output amount for a given input
+
     function getAmountOut(
-        address tokenIn,
-        address tokenOut,
-        uint amountIn
-    ) external view returns (uint amountOut) {
-        require(amountIn > 0, "Zero in");
-
-        (uint reserveIn, uint reserveOut) = getReserves(tokenIn, tokenOut);
-        require(reserveIn > 0 && reserveOut > 0, "Bad reserves");
-
-        amountOut = (amountIn * reserveOut) / (reserveIn + amountIn);
+    uint amountIn,
+    uint reserveIn,
+    uint reserveOut
+    ) pure external returns (uint amountOut) {
+    require(amountIn > 0, "Amount must be > 0");
+    require(reserveIn > 0 && reserveOut > 0, "Invalid reserves");
+    amountOut = (amountIn * reserveOut) / (reserveIn + amountIn);
     }
 
     /// @notice Swaps a fixed amount of input tokens for as many output tokens as possible
@@ -222,15 +224,15 @@ contract SimpleSwap is ERC20 {
     /// @param path Array with [tokenIn, tokenOut]
     /// @param to Recipient address
     /// @param deadline Timestamp after which the tx reverts
-    function swapExactTokensForTokens(
+function swapExactTokensForTokens(
         uint amountIn,
         uint amountOutMin,
         address[] calldata path,
         address to,
         uint deadline
     ) external returns (uint[] memory amounts) {
-        require(block.timestamp <= deadline, "Expired");
-        require(path.length == 2, "Path length");
+        require(block.timestamp <= deadline, "Deadline expired");
+        require(path.length == 2, "Only 1-step swaps supported");
 
         address tokenIn = path[0];
         address tokenOut = path[1];
@@ -238,19 +240,17 @@ contract SimpleSwap is ERC20 {
         (uint reserveIn, uint reserveOut) = getReserves(tokenIn, tokenOut);
         require(reserveIn > 0 && reserveOut > 0, "No liquidity");
 
-        uint amountOut = this.getAmountOut(tokenIn, tokenOut, amountIn);
-        require(amountOut >= amountOutMin, "Low out");
+        uint amountOut = this.getAmountOut(amountIn, reserveIn, reserveOut);
+        require(amountOut >= amountOutMin, "Insufficient output amount");
 
         ERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
         ERC20(tokenOut).transfer(to, amountOut);
 
         updateReserves(tokenIn, tokenOut, reserveIn + amountIn, reserveOut - amountOut);
 
-        amounts = new uint[](2);
+        amounts = new uint[](2) ;
         amounts[0] = amountIn;
         amounts[1] = amountOut;
-
-        emit TokensSwapped(msg.sender, tokenIn, tokenOut, amountIn, amountOut);
         return amounts;
     }
 
